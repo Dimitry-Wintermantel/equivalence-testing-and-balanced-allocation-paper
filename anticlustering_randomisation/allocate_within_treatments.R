@@ -40,6 +40,16 @@
 #' - Types are harmonized internally (e.g., factors/characters) to ensure consistent merging and labeling.
 #' Additional checks on covariates (presence, numeric type, non-constant) are performed inside [`allocate_treatments()`].
 #'
+#' @section How to cite:
+#' If you use this function in academic work, please cite:
+#' Wintermantel, D., Osterman, J., Mair, M. M., & Hartig, F. (in preparation).
+#' *Equivalence testing in pesticide risk assessment – Evaluation and practical guidance
+#' for design, analysis and interpretation*.
+#'
+#' The treatment allocation implemented here relies on anticlustering algorithms.
+#' Users are encouraged to also cite the `anticlust` package where appropriate
+#' (see `citation("anticlust")`).
+#'
 #' @examples
 #' set.seed(123)
 #'
