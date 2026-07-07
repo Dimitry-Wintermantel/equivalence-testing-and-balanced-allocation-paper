@@ -9,8 +9,8 @@ library(lme4)
 library(lmtest)
 library(anticlust)
 
-source(here::here("R scripts", "allocate_treatments.R"))
-source(here::here("R scripts", "allocate_within_treatments.R"))
+
+source(here::here("R scripts", "experimental_allocation.R"))
 
 obtain_var_comps <- function(original_data, 
                              use_n_bees_initial = c("main", "no", "interaction"), 
@@ -81,7 +81,7 @@ calculate_sd_values <- function(n_sites_total, n_colonies) {
   sim_data$n_bees_initial[sim_data$n_bees_initial < 0] <- 0
   
   # Step 3: Allocate treatments to colonies based on covariates (colony-level)
-  sim_data <- allocate_treatments(
+  sim_data <- experimental_allocation(
     data = sim_data,
     treatments = c("Control", "Pesticide"),
     treatment_var = "Treatment",
@@ -98,9 +98,9 @@ calculate_sd_values <- function(n_sites_total, n_colonies) {
   )
   
   # Step 5: Re-allocate colonies to sites (covariate-balanced)
-  sim_data <- allocate_within_treatments(
-    data_subjects = sim_data,
-    data_groups = site_treatment_combis,
+  sim_data <- experimental_allocation(
+    data = sim_data,
+    group_data = site_treatment_combis,
     treatment_var = "Treatment",
     group_var = "Site",
     covariates = "n_bees_initial"
@@ -173,8 +173,6 @@ apply_effects <- function(data, n_sites_control = NULL,
       mutate(n_bees = round(ifelse(Treatment == "Pesticide" & Period == "After", 
                                    (1 - effect_size) * n_bees, n_bees)))
   }
-  
-  # Additional effect_timing types can be handled here (e.g., linear effects)
   
   return(output)
 }
@@ -259,7 +257,7 @@ mimic_control_data <- function(var_comps_list = NULL,
       site_ids <- sample(unique(IDs$Site))
       
       # Assign treatments in balanced way
-      IDs <- allocate_treatments(IDs,
+      IDs <- experimental_allocation(IDs,
                                  treatments = c("Control", "Pesticide"),
                                  treatment_var = "Treatment",
                                  covariates = covariates,
@@ -273,8 +271,8 @@ mimic_control_data <- function(var_comps_list = NULL,
         Treatment = ifelse(site_ids %in% control_sites, "Control", "Pesticide")
       )
       
-      IDs <- allocate_within_treatments(data_subjects = IDs,
-                                        data_groups = site_treatment_combis,
+      IDs <- experimental_allocation(data = IDs,
+                                        group_data = site_treatment_combis,
                                         treatment_var = "Treatment",
                                         group_var = "Site",
                                         covariates = covariates,
@@ -323,153 +321,8 @@ mimic_control_data <- function(var_comps_list = NULL,
     new_data <- left_join(new_data, metadata_df, by = "Assessment")
   }
   
-  # new_data <- as_tibble(new_data) %>% select(any_of(c("Treatment", "Site", "Colony", "Assessment", "n_bees", "n_bees_initial")), everything())
-  
   return(new_data)
 }
-
-# mimic_control_data <- function(original_data,
-#                                n_sites_total,
-#                                n_colonies,
-#                                use_n_bees_initial = c("main", "no", "interaction"),
-#                                use_glmm = TRUE,
-#                                backtransform = TRUE,
-#                                reallocate_colonies = FALSE,
-#                                covariates = NULL) {
-# 
-#   # Check argument values
-#   use_n_bees_initial <- match.arg(use_n_bees_initial, c("main", "no",  "interaction"))
-# 
-#   if (!reallocate_colonies & !is.null(covariates)) {
-#     warning("Covariates were specified but reallocate_colonies = FALSE. Covariates are disregarded and no reallocation is performed.")
-#   }
-# 
-#   # Fit the model (either lmer or glmmTMB)
-#   if (use_glmm) {
-#     formula <- switch(use_n_bees_initial,
-#                       "no" = n_bees ~ Assessment + (1|Site/Colony),
-#                       "main" = n_bees ~ log(n_bees_initial) + Assessment + (1|Site/Colony),
-#                       "interaction" = n_bees ~ log(n_bees_initial) * Assessment + (1|Site/Colony))
-#     model <- glmmTMB(formula, family = nbinom2(), data = original_data)
-#   } else {
-#     formula <- switch(use_n_bees_initial,
-#                       "no" = log(n_bees) ~ Assessment + (1|Site/Colony),
-#                       "main" = log(n_bees) ~ log(n_bees_initial) + Assessment + (1|Site/Colony),
-#                       "interaction" = log(n_bees) ~ log(n_bees_initial) * Assessment + (1|Site/Colony))
-#     model <- lmer(formula, data = original_data)
-#   }
-# 
-#   # Create new site and colony IDs
-#   new_sites <- paste0("F", 1:n_sites_total)
-#   new_colonies <- paste0(1:n_colonies)
-#   assessments <- unique(original_data$Assessment)
-# 
-#   IDs <- expand.grid(Site = new_sites, Colony = new_colonies) %>%
-#     mutate(Colony = paste(Site, Colony, sep = "_"))
-# 
-#   # Simulate initial bee counts if using n_bees_initial
-#   if (use_n_bees_initial != "no") {
-#     first_assessment <- sort(unique(original_data$Assessment))[1]
-#     n_bees_initial <- subset(original_data, Assessment == first_assessment)$n_bees_initial
-#     initial_mean <- mean(n_bees_initial, na.rm = TRUE)
-#     initial_sd <- sd(n_bees_initial, na.rm = TRUE)
-#     IDs$n_bees_initial <- round(rnorm(n = nrow(IDs), mean = initial_mean, sd = initial_sd))
-#     IDs$n_bees_initial[IDs$n_bees_initial < 0] <- 0
-#   }
-# 
-#   # Apply reallocation if requested
-#   if (reallocate_colonies) {
-#     if (!is.null(covariates)) {
-# 
-#       # Balanced reallocation
-#       site_ids <- unique(IDs$Site)
-#       IDs <- allocate_treatments(IDs,
-#                                  treatments = site_ids,
-#                                  treatment_var = "Site",
-#                                  covariates = covariates)
-# 
-#     } else {
-#       # Random reallocation
-#       IDs$Site <- sample(IDs$Site, replace = FALSE)
-#     }
-#   }
-# 
-#   # Prepare prediction data
-#   new_data <- expand.grid(Assessment = assessments, Colony = IDs$Colony) %>%
-#     left_join(IDs, by = "Colony")
-# 
-#   # Predict fixed effects
-#   predicted_fixed <- predict(model, newdata = new_data, re.form = NA, allow.new.levels = TRUE)
-# 
-#   # Extract random effect SDs
-#   VarCorrs <- VarCorr(model)
-# 
-#   if (use_glmm) {
-#     colony_sd   <- sqrt(as.data.frame(VarCorrs[[1]]$Colony:Site))[[1]]
-#     site_sd <- sqrt(as.data.frame(VarCorrs[[1]]$Site))[[1]]
-# 
-#     predictions_including_RE <- predict(model, newdata = original_data, type = "link", re.form = NULL)
-#     residuals_log_scale <- log(original_data$n_bees) - predictions_including_RE
-#     residual_sd <- sd(residuals_log_scale)
-# 
-#   } else {
-#     VarCorrs_df <- as.data.frame(VarCorrs)
-#     colony_sd <- VarCorrs_df[VarCorrs_df$grp == "Colony:Site", ]$sdcor
-#     site_sd   <- VarCorrs_df[VarCorrs_df$grp == "Site", ]$sdcor
-#     residual_sd <- VarCorrs_df[VarCorrs_df$grp == "Residual", ]$sdcor
-#   }
-# 
-#   # Assign random effects based on final site allocation
-#   new_data <- new_data %>%
-#     mutate(random_site   = rnorm(n_sites_total)[as.numeric(factor(Site))] * site_sd,
-#            random_colony = rnorm(n_sites_total * n_colonies)[as.numeric(factor(Colony))] * colony_sd,
-#            residual      = rnorm(nrow(.), mean = 0, sd = residual_sd))
-# 
-#   # Combine components
-#   new_data$log_n_bees <- predicted_fixed + new_data$random_site + new_data$random_colony + new_data$residual
-#   new_data$log_n_bees_no_site_effect <- predicted_fixed + new_data$random_colony + new_data$residual
-#   new_data$log_n_bees_fixed_effect_only <- predicted_fixed
-# 
-#   if (backtransform) {
-#     new_data$n_bees <- round(exp(new_data$log_n_bees))
-#     new_data$n_bees[new_data$n_bees < 0] <- 0
-# 
-#     new_data$n_bees_no_site_effect <- round(exp(new_data$log_n_bees_no_site_effect))
-#     new_data$n_bees_no_site_effect[new_data$n_bees_no_site_effect < 0] <- 0
-# 
-#     new_data$n_bees_fixed_effect_only <- round(exp(new_data$log_n_bees_fixed_effect_only))
-#     new_data$n_bees_fixed_effect_only[new_data$n_bees_fixed_effect_only < 0] <- 0
-#   }
-# 
-#   # Add metadata
-#   metadata_vars <- c("Phase", "Period", "Study")
-#   available_metadata <- intersect(metadata_vars, names(original_data))
-#   if (length(available_metadata) > 0) {
-#     metadata_df <- original_data %>%
-#       dplyr::select(Assessment, all_of(available_metadata)) %>%
-#       distinct()
-# 
-#     new_data <- left_join(new_data, metadata_df, by = "Assessment")
-#   }
-# 
-#   return(new_data)
-# }
-
-# reallocate_colonies_randomly <- function(data) {
-# 
-#   first_assessment <- sort(unique(data$Assessment))[1]
-#   data_first_assessment <- subset(data, Assessment == first_assessment)
-#   data_first_assessment$Site <- sample(data_first_assessment$Site, replace = FALSE)
-# 
-#   assigned_sites <- data_first_assessment[, c("Site", "Colony")]
-# 
-#   data_other_assessments <- subset(data, Assessment != first_assessment) %>%
-#     mutate(Site = NULL) %>% full_join(assigned_sites)
-# 
-#   output <- bind_rows(data_first_assessment, data_other_assessments)
-# 
-#   return(output)
-# }
 
 permute_colonies <- function(data) {
   
@@ -490,27 +343,6 @@ permute_colonies <- function(data) {
   
   return(output)
 }
-
-# reallocate_colonies_balanced <- function(data, covariates){
-#   
-#   first_assessment <- sort(unique(data$Assessment))[1]
-#   data_first_assessment <- subset(data, Assessment == first_assessment)
-#   site_ids <- unique(data_first_assessment$Site)
-#   
-#   data_first_assessment <- allocate_treatments(data_first_assessment, 
-#                                                treatments = site_ids, 
-#                                                treatment_var = "Site",
-#                                                covariates = covariates) 
-#   
-#   assigned_sites <- data_first_assessment[, c("Site", "Colony")]
-#   
-#   data_other_assessments <- subset(data, Assessment != first_assessment) %>%
-#     mutate(Site = NULL) %>% full_join(assigned_sites)
-#   
-#   output <- bind_rows(data_first_assessment, data_other_assessments)
-#   
-#   return(output)
-# }
 
 apply_treatment_effects <- function(data, n_sites_control = NULL,
                                     effect_size, effect_timing = "abrupt") {
@@ -882,41 +714,6 @@ run_simulations <- function(n_simulations,
         permute_colonies(data_without_effects)
     }
     
-    # # Reallocate colonies if specified
-    # if (reallocate_colonies) {
-    #   
-    #   # Balanced reallocation if reallocate_colonies == T and a covariate(s) is/are specified
-    #   if (!is.null(covariates)) {
-    #     data_without_effects <- 
-    #       reallocate_colonies_balanced(data_without_effects, covariates = covariates)
-    #   } else {
-    #     # Reallocate randomly if reallocate_colonies == T but no covariates were specified
-    #     data_without_effects <- 
-    #       reallocate_colonies_randomly(data_without_effects)
-    #   }
-    # } else {
-    #   # No reallocation if reallocate_colonies == F
-    #   
-    #   if (!is.null(covariates)) {
-    #     warning("Covariates were specified but reallocate_colonies = FALSE. Covariates are disregarded and no reallocation is performed.")
-    #   }
-    # }
-    
-    # before_effect_stats <- data_without_effects %>%
-    #   group_by(Treatment, Assessment) %>%
-    #   summarise(
-    #     mean_n_bees_before_effect = mean(n_bees, na.rm = TRUE),
-    #     sd_n_bees_before_effect = sd(n_bees, na.rm = TRUE),
-    #     .groups = "drop"
-    #   ) %>%
-    #   pivot_wider(names_from = Treatment,
-    #               values_from = c(mean_n_bees_before_effect, sd_n_bees_before_effect),
-    #               names_sep = "_") %>% 
-    #   mutate(
-    #     diff_mean_n_bees_before_effect = mean_n_bees_before_effect_Pesticide - mean_n_bees_before_effect_Control,
-    #     diff_sd_n_bees_before_effect = sd_n_bees_before_effect_Pesticide - sd_n_bees_before_effect_Control
-    #   )
-    
     n_negatives <- NA_integer_
     lowest_n_bees <- NA_real_ 
     
@@ -1000,8 +797,6 @@ run_simulations <- function(n_simulations,
       reallocate_colonies & !is.null(covariates) ~ "balanced"
     )
     
-    # combined_results <- bind_cols(combined_results, before_effect_stats[rep(1, nrow(combined_results)), ])
-    
     combined_results <- combined_results %>%
       left_join(before_effect_stats, by = "Assessment")
     
@@ -1034,8 +829,8 @@ run_simulations <- function(n_simulations,
       }
       
       # Export necessary functions and variables 
-      clusterExport(cl, list("mimic_control_data", "allocate_treatments", 
-                             "allocate_within_treatments",
+      clusterExport(cl, list("mimic_control_data", 
+                             "experimental_allocation", 
                              "permute_colonies", "adjust_control_sd",
                              "run_model", 
                              "run_tests", "test_difference", "test_equivalence", 

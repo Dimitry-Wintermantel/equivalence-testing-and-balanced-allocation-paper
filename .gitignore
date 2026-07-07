@@ -1,0 +1,7 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+!anticlustering_randomisation/allocate_treatments.R
+!anticlustering_randomisation/allocate_within_treatments.R
