@@ -44,7 +44,7 @@ library(anticlust)
 #' Wintermantel, D., Osterman, J., Mair, M. M., & Hartig, F. (2026).
 #' *Equivalence testing in pesticide risk assessment – Evaluation and practical
 #' guidance for design, analysis and interpretation*. arXiv:2607.07543.
-#' https://arxiv.org/abs/2607.07543
+#' https://doi.org/10.48550/arXiv.2607.07543
 #'
 #' The treatment allocation implemented here relies on anticlustering algorithms.
 #' Users are encouraged to also cite the `anticlust` package where appropriate
