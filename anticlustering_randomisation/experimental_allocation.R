@@ -15,7 +15,7 @@ library(anticlust)
 #' @param keep_excluded_data Logical. If `TRUE`, retains subjects that were not allocated within the specified constraints. Defaults to `FALSE`.
 #' @param objective A string specifying the objective function for anticlustering. Options include `"variance"` (default), `"diversity"`, `"average-diversity"`, `"kplus"`, and `"dispersion"`.
 #' @param method A string specifying the optimization method for anticlustering. Options include `"local-maximum"` (default), `"exchange"`, `"brusco"`, `"ilp"`, and `"2PML"`.
-#' @param repetitions Integer. Specifies the number of times the optimization is repeated when using heuristic methods (`"exchange"`, `"local-maximum"`, `"brusco"`, or `"2PML"`). The best solution is selected. Defaults to `100`.
+#' @param repetitions Integer. Specifies the number of times the optimization is repeated when using heuristic methods (`"exchange"`, `"local-maximum"`, `"brusco"`, or `"2PML"`). The best solution is selected. Defaults to `10`.
 #' @param match_within A column name in `data` (optional). Specifies a variable within which matching should occur, ensuring that subjects are grouped within subsets defined by this variable. Defaults to `NULL`.
 #' @param standardize Logical. If `TRUE`, covariates are standardized via `scale()` before optimization starts. Defaults to `TRUE`.
 #'
@@ -43,7 +43,6 @@ library(anticlust)
 #' If you use this function in academic work, please cite:
 #' Wintermantel, D., Osterman, J., Mair, M. M., & Hartig, F. (2026).
 #' *Equivalence testing in pesticide risk assessment – Evaluation and practical
-#' guidance for design, analysis and interpretation*. arXiv:2607.07543.
 #' https://doi.org/10.48550/arXiv.2607.07543
 #'
 #' The treatment allocation implemented here relies on anticlustering algorithms.
