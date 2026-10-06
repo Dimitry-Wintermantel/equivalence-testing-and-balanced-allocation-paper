@@ -207,8 +207,10 @@ experimental_allocation <- function(data,
       included <- df[keep, , drop = FALSE]
 
       # Assign individuals of the same set to different groups
+      # (use the same (standardized) covariate matrix as matching() so that
+      # all covariates contribute equally regardless of their scales)
       included[[out_var]] <- anticlustering(
-        included[, covariates, drop = FALSE],
+        covariate_data[keep, , drop = FALSE],
         K = n_targets,
         objective = objective,
         method = method,
