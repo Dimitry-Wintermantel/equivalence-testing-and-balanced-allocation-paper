@@ -10,7 +10,7 @@ library(lmtest)
 library(anticlust)
 
 
-source(here::here("R scripts", "experimental_allocation.R"))
+source(here::here("R scripts", "anticlustering_randomisation", "experimental_allocation.R"))
 
 obtain_var_comps <- function(original_data, 
                              use_n_bees_initial = c("main", "no", "interaction"), 
@@ -61,62 +61,6 @@ obtain_var_comps <- function(original_data,
     residual_sd = residual_sd,
     initial_mean = initial_mean,
     initial_sd = initial_sd)
-  
-  return(output)
-}
-
-calculate_sd_values <- function(n_sites_total, n_colonies) {
-  # Step 1: Simulate control data
-  sim_data <- mimic_control_data(
-    var_comps_list = var_comps_glmm_main,
-    original_data = original_control_data_234,
-    n_sites_total = n_sites_total,
-    n_colonies = n_colonies,
-    backtransform = TRUE,
-    reallocate_colonies = FALSE # First simulate unallocated structure
-  )
-  
-  # Step 2: Add covariate (e.g., initial colony size)
-  sim_data$n_bees_initial <- round(rnorm(n = nrow(sim_data), mean = 1000, sd = 100))
-  sim_data$n_bees_initial[sim_data$n_bees_initial < 0] <- 0
-  
-  # Step 3: Allocate treatments to colonies based on covariates (colony-level)
-  sim_data <- experimental_allocation(
-    data = sim_data,
-    treatments = c("Control", "Pesticide"),
-    treatment_var = "Treatment",
-    covariates = "n_bees_initial"
-  ) %>%
-    dplyr::select(-Site)  # temporarily remove Site to reassign after
-  
-  # Step 4: Assign treatments to sites (balanced reallocation)
-  site_ids <- sample(unique(sim_data$Colony))  # assuming one colony per site initially
-  control_sites <- assign_control_sites(site_ids)
-  site_treatment_combis <- data.frame(
-    Site = site_ids,
-    Treatment = ifelse(site_ids %in% control_sites, "Control", "Pesticide")
-  )
-  
-  # Step 5: Re-allocate colonies to sites (covariate-balanced)
-  sim_data <- experimental_allocation(
-    data = sim_data,
-    group_data = site_treatment_combis,
-    treatment_var = "Treatment",
-    group_var = "Site",
-    covariates = "n_bees_initial"
-  )
-  
-  # Step 6: Fit model and extract SDs
-  model_balanced <- glmmTMB(
-    n_bees ~ log(n_bees_initial) + Assessment + (1 | Site/Colony),
-    data = sim_data,
-    family = nbinom2()
-  )
-  
-  output <- data.frame(
-    site_sd = sqrt(VarCorr(model_balanced)$cond$Site[1]),
-    colony_sd = sqrt(VarCorr(model_balanced)$cond[["Colony:Site"]][1])
-  )
   
   return(output)
 }
@@ -342,48 +286,6 @@ permute_colonies <- function(data) {
   output <- bind_rows(data_first_assessment, data_other_assessments)
   
   return(output)
-}
-
-apply_treatment_effects <- function(data, n_sites_control = NULL,
-                                    effect_size, effect_timing = "abrupt") {
-
-  # Check for necessary columns
-  required_columns <- c("Assessment", "n_bees", "Site", "Period")
-  missing_columns <- setdiff(required_columns, names(data))
-
-  if (length(missing_columns) > 0) {
-    stop(paste("The following required columns are missing in the data:",
-               paste(missing_columns, collapse = ", ")))
-  }
-
-  # Ensure there's at least one row where Period == "After"
-  if (sum(data$Period == "After") == 0) {
-    stop("The dataset must contain at least one 'After' period in the 'Period' column.")
-  }
-
-  # Assign treatments (control vs pesticide)
-  unique_sites <- unique(data$Site)
-  n_sites_total <- length(unique_sites)
-
-  n_sites_control <- ifelse(is.null(n_sites_control), floor(n_sites_total / 2), n_sites_control)
-  control_sites <- sample(unique_sites, size = n_sites_control)
-
-  data_with_treatment <- data %>%
-    mutate(Assessment = factor(Assessment),
-           Treatment = factor(ifelse(Site %in% control_sites, "Control", "Pesticide")))
-
-  data_with_treatment$n_bees_before_effect <- data_with_treatment$n_bees
-
-  # Apply treatment effect (abrupt or otherwise)
-  if (effect_timing == "abrupt") {
-    data_with_treatment <- data_with_treatment %>%
-      mutate(n_bees = round(ifelse(Treatment == "Pesticide" & Period == "After",
-                                   (1 - effect_size) * n_bees, n_bees)))
-  }
-
-  # Additional effect_timing types can be handled here (e.g., linear effects)
-
-  return(data_with_treatment)
 }
 
 # Run models -------
@@ -1050,88 +952,3 @@ calculate_and_reformat_trust_rates <- function(simulation_results,
   trust_rates
 }
 
-# Function to calculate false alarm and false trust rates
-obtain_misjudgement_rates_by_effect_size <- function(data, delta_e = 0.1, 
-                                                     IDs = c("n_sites", "n_colonies", "Assessment", "effect_timing")) {
-  
-  data <- data %>% mutate(effect_size_perc = as.integer(round(100*effect_size)))
-  
-  # Filter data into two categories: no real risk and real risk
-  low_risk_data   <- data %>% filter(effect_size <= delta_e)
-  high_risk_data  <- data %>% filter(effect_size > delta_e)
-  
-  rates_list <- list()
-  
-  if(is.null(low_risk_data) == FALSE) {
-    
-    if ("trust_rate_diff" %in% names(low_risk_data)) {
-      rates_list$false_alarms_diff <-   low_risk_data  %>% mutate(false_alarm_rate_diff = 1 - trust_rate_diff) %>% 
-        pivot_wider(id_cols = all_of(IDs),
-                    names_from = effect_size_perc, 
-                    values_from = false_alarm_rate_diff,
-                    names_prefix = "false_alarm_rate_diff_")
-    }
-    
-    if ("trust_rate_equi" %in% names(low_risk_data)) {
-      rates_list$false_alarms_equi <-   low_risk_data  %>% mutate(false_alarm_rate_equi = 1 - trust_rate_equi) %>% 
-        pivot_wider(id_cols = all_of(IDs),
-                    names_from = effect_size_perc, 
-                    values_from = false_alarm_rate_equi,
-                    names_prefix = "false_alarm_rate_equi_")
-    }
-    
-    if ("trust_rate_equi_Hotopp" %in% names(low_risk_data)) {
-      rates_list$false_alarms_equi_Hotopp <-   low_risk_data  %>% mutate(false_alarm_rate_equi_Hotopp = 1 - trust_rate_equi_Hotopp) %>% 
-        pivot_wider(id_cols = all_of(IDs),
-                    names_from = effect_size_perc, 
-                    values_from = false_alarm_rate_equi_Hotopp,
-                    names_prefix = "false_alarm_rate_equi_Hotopp_")
-    }
-  }
-  
-  if(is.null(high_risk_data) == FALSE) {
-    
-    if ("trust_rate_diff" %in% names(high_risk_data)) {
-      rates_list$false_trusts_diff <- high_risk_data %>% 
-        pivot_wider(id_cols = all_of(IDs),
-                    names_from = effect_size_perc, 
-                    values_from = trust_rate_diff,
-                    names_prefix = "false_trust_rate_diff_")
-    }
-    
-    if ("trust_rate_equi" %in% names(high_risk_data)) {
-      rates_list$false_trusts_equi <- high_risk_data %>% 
-        pivot_wider(id_cols = all_of(IDs),
-                    names_from = effect_size_perc, 
-                    values_from = trust_rate_equi,
-                    names_prefix = "false_trust_rate_equi_")
-    }
-    
-    if ("trust_rate_equi_Hotopp" %in% names(high_risk_data)) {
-      rates_list$false_trusts_equi_Hotopp <- high_risk_data %>% 
-        pivot_wider(id_cols = all_of(IDs),
-                    names_from = effect_size_perc, 
-                    values_from = trust_rate_equi_Hotopp,
-                    names_prefix = "false_trust_rate_equi_Hotopp_")
-    }
-  }
-  
-  misjudgement_rates <- suppressMessages(reduce(rates_list, full_join))
-  
-  return(misjudgement_rates)
-}
-
-calculate_misjudgement_rates_by_effect_size <- function(simulation_results, delta_e = 0.1, 
-                                                        IDs = c("n_sites", 
-                                                                "n_colonies", 
-                                                                "Assessment", 
-                                                                "effect_timing")) {
-  
-  group_by <- c("effect_size", IDs)
-  
-  trust_rates <- calculate_trust_rates(simulation_results, group_by = group_by)
-  
-  output <- obtain_misjudgement_rates_by_effect_size(trust_rates, IDs = IDs)
-  
-  output
-}

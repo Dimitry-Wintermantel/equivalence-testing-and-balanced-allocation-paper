@@ -2,6 +2,15 @@
 .Rhistory
 .RData
 .Ruserdata
+Rplots.pdf
 
-anticlustering_randomisation/allocate_treatments.R
-anticlustering_randomisation/allocate_within_treatments.R
+# Two allocation scripts are not part of the published repository.
+R scripts/anticlustering_randomisation/allocate_treatments.R
+R scripts/anticlustering_randomisation/allocate_within_treatments.R
+
+# Data and generated output are never committed.
+# Place the raw data in Data & Figures/Raw data/ (see README.md).
+Data & Figures/*
+!Data & Figures/Raw data/
+Data & Figures/Raw data/*
+!Data & Figures/Raw data/README.md

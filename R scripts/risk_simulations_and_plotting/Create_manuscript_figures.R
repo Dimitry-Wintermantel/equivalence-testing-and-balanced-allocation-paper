@@ -10,11 +10,20 @@ library(ggrepel)
 library(grid)  
 library(patchwork)
 library(DHARMa)
+library(ggeffects)
 
-source(here::here("R scripts", "Read original data.R"))
-source(here::here("R scripts", "Functions to simulate risk assessments.R"))
+source(here::here("R scripts", "risk_simulations_and_plotting", "config.R"))
+source(here::here("R scripts", "risk_simulations_and_plotting", "Read original data.R"))
+source(here::here("R scripts", "risk_simulations_and_plotting", "Functions to simulate risk assessments.R"))
 
-read_results <- TRUE
+# read_results and n_simulations are set in config.R
+
+# Variance components of the original data, used for the DHARMa residual plot
+# (Fig. A3). Simulate risk.R defines this as well; recompute it here so this
+# script can also be run on its own.
+if (!exists("var_comps_glmm_main")) {
+  var_comps_glmm_main <- obtain_var_comps(original_data = original_control_data_234)
+}
 
 colors_tests <- c("#009E73", "#CC79A7","#000000")
 colors_real_vs_simulated <- c("#56B4E9", "#E69F00")
@@ -610,7 +619,8 @@ plot_trust_vs_effect_size <- function(data,
                                                 color_lab = "Dataset",
                                                 color_values = colors_real_vs_simulated,
                                                 facet_params = Test ~ Assessment,
-                                                slices = NULL) {
+                                                slices = NULL,
+                                                assessment_label = "assessment") {
   
   plot_data <- calculate_and_reformat_trust_rates(data, slices = slices)
   
@@ -618,6 +628,19 @@ plot_trust_vs_effect_size <- function(data,
     # Test = recode(Test, "Difference" = "Point-null"),
     Test = factor(Test, levels = c("Difference", "EFSA equivalence", "Hotopp equivalence"))
   )
+  
+  # Optionally relabel the Assessment facet values (e.g. "assessment" -> "time point")
+  if (assessment_label == "time point") {
+    plot_data <- plot_data %>%
+      mutate(Assessment = factor(
+        case_when(
+          Assessment == "Across assessments" ~ "Across time points",
+          Assessment == "Final assessment" ~ "Final time point",
+          TRUE ~ as.character(Assessment)
+        ),
+        levels = c("Across time points", "Final time point")
+      ))
+  }
   
   
   # Check if the first facetting variable is N_sites or n_sites
@@ -687,7 +710,7 @@ plot_trust_vs_effect_size <- function(data,
 
 # False classifications of high-risk pesticides by test ------------
 if(read_results){
-  path_1 <- "R output/Simulation results/sim_results_2026_high_risk.rds"
+  path_1 <- results_path("sim_results_2026_high_risk.rds")
   sim_results_high_risk <- readRDS(path_1)
 }
 
@@ -735,7 +758,7 @@ false_low_risk_by_effect_size_plot_across
 
 # Pareto plots -------
 if(read_results){
-  sim_results_pareto_alphas <- readRDS("R output/Simulation results/sim_results_2026_pareto_alphas.rds")
+  sim_results_pareto_alphas <- readRDS(results_path("sim_results_2026_pareto_alphas.rds"))
 }
 
 trust_rates_pareto_alphas <- 
@@ -763,7 +786,11 @@ Fig_2_false_trusts_EFSA_vs_Hotopp_final <- plot_grid(
 
 Fig_2_false_trusts_EFSA_vs_Hotopp_final
 
-ggsave("R output/Plots/Figures tiff/Fig_2_false_trusts_EFSA_vs_Hotopp_final.tiff", 
+ggsave(plots_path("Figures tiff/Fig_2_false_trusts_EFSA_vs_Hotopp_final.tiff"), 
+       width = 7.5, height = 7.5)
+ggsave(plots_path("Figures final/Fig_2_false_trusts_EFSA_vs_Hotopp_final.svg"), 
+       width = 7.5, height = 7.5)
+ggsave(plots_path("Figures final/Fig_2_false_trusts_EFSA_vs_Hotopp_final.pdf"), 
        width = 7.5, height = 7.5)
 
 # Fig_S_1_false_trusts_EFSA_vs_Hotopp_across <- plot_grid(
@@ -776,17 +803,17 @@ ggsave("R output/Plots/Figures tiff/Fig_2_false_trusts_EFSA_vs_Hotopp_final.tiff
 # )
 # 
 # Fig_S_1_false_trusts_EFSA_vs_Hotopp_across
-# ggsave("R output/Plots/Figures tiff/Fig_S_1_false_trusts_EFSA_vs_Hotopp_across.tiff", 
+# ggsave(plots_path("Figures tiff/Fig_S_1_false_trusts_EFSA_vs_Hotopp_across.tiff"), 
 #        width = 7.5, height = 7.5)
 
 # Power in relation to n_sites and accounting strategy -----------
 if (read_results) {
-  sim_results_n_bees_initial_not_accounted <- readRDS("R output/Simulation results/sim_results_2026_n_bees_initial_not_accounted.rds")
-  sim_results_n_bees_initial_balanced <- readRDS("R output/Simulation results/sim_results_2026_n_bees_initial_balanced.rds")
-  sim_results_n_bees_initial_included <- readRDS("R output/Simulation results/sim_results_2026_n_bees_initial_included.rds")
-  sim_results_n_bees_initial_included_and_balanced <- readRDS("R output/Simulation results/sim_results_2026_n_bees_initial_included_and_balanced.rds")
+  sim_results_n_bees_initial_not_accounted <- readRDS(results_path("sim_results_2026_n_bees_initial_not_accounted.rds"))
+  sim_results_n_bees_initial_balanced <- readRDS(results_path("sim_results_2026_n_bees_initial_balanced.rds"))
+  sim_results_n_bees_initial_included <- readRDS(results_path("sim_results_2026_n_bees_initial_included.rds"))
+  sim_results_n_bees_initial_included_and_balanced <- readRDS(results_path("sim_results_2026_n_bees_initial_included_and_balanced.rds"))
   
-  sim_results_EFSA_GD_refinement <- readRDS("R output/Simulation results/sim_results_2026_EFSA_GD_refinement.rds")
+  sim_results_EFSA_GD_refinement <- readRDS(results_path("sim_results_2026_EFSA_GD_refinement.rds"))
   
 }
 
@@ -827,8 +854,6 @@ trust_rates_adjust_strategy <- calculate_and_reformat_trust_rates(
     Effect_size_perc = factor(Effect_size_perc, levels = unique(Effect_size_perc))
   ) 
 
-View(trust_rates_adjust_strategy %>% filter(trust_rate > 0.8))
-
 ## Plot 
 generate_multi_panel_power_plot(
   data = trust_rates_adjust_strategy,
@@ -845,7 +870,11 @@ Fig_3_power_vs_sites_by_accounting_final <- generate_multi_panel_power_plot(
 
 Fig_3_power_vs_sites_by_accounting_final
 
-ggsave("R output/Plots/Figures tiff/Fig_3_power_vs_sites_by_accounting_final.tiff", 
+ggsave(plots_path("Figures tiff/Fig_3_power_vs_sites_by_accounting_final.tiff"), 
+       width = 8, height = 6)
+ggsave(plots_path("Figures final/Fig_3_power_vs_sites_by_accounting_final.svg"), 
+       width = 8, height = 6)
+ggsave(plots_path("Figures final/Fig_3_power_vs_sites_by_accounting_final.pdf"), 
        width = 8, height = 6)
 
 # Fig_S_2_power_vs_sites_by_accounting_across <- generate_multi_panel_power_plot(
@@ -854,7 +883,7 @@ ggsave("R output/Plots/Figures tiff/Fig_3_power_vs_sites_by_accounting_final.tif
 # )
 # 
 # Fig_S_2_power_vs_sites_by_accounting_across
-# ggsave("R output/Plots/Figures tiff/Fig_S_2_power_vs_sites_by_accounting_across.tiff",
+# ggsave(plots_path("Figures tiff/Fig_S_2_power_vs_sites_by_accounting_across.tiff"),
 #        width = 8, height = 6)
 
 # Conceptual figure on different tests ---------
@@ -956,18 +985,21 @@ Fig_4_conceptual_combined_tests <- ggplot(data_scenarios,
   labs(x = NULL, y = NULL)
 
 Fig_4_conceptual_combined_tests 
-ggsave("R output/Plots/Figures tiff/Fig_4_conceptual_combined_tests.tiff", width = 9, height = 7)
+ggsave(plots_path("Figures tiff/Fig_4_conceptual_combined_tests.tiff"), width = 9, height = 7)
+ggsave(plots_path("Figures final/Fig_4_conceptual_combined_tests.svg"), width = 9, height = 7)
+ggsave(plots_path("Figures final/Fig_4_conceptual_combined_tests.pdf"), width = 9, height = 7)
 
 # Appendix figures ----------- 
 ## Fig. A1 - Results real vs simulated    --------------- 
 ## Compare results using dataset simulated in parametric bootstrap to non-parametric bootstrap on original data 
 if(read_results){
-  sim_results_real <- readRDS("R output/Simulation results/sim_results_2026_real.rds")
-  sim_results_simulated <- readRDS("R output/Simulation results/sim_results_2026_simulated.rds")
+  sim_results_real <- readRDS(results_path("sim_results_2026_real.rds"))
+  sim_results_simulated <- readRDS(results_path("sim_results_2026_simulated.rds"))
 }
 
 sim_results_real_vs_simulated <- bind_rows(sim_results_real, sim_results_simulated) %>% 
-  mutate(CI_span = CI_upper_equi - CI_lower_equi)
+  mutate(CI_span = CI_upper_equi - CI_lower_equi,
+         risk_diff = ifelse(p_value_diff < 0.05, 1, 0))
 
 # Have a look at variation
 sim_results_real_vs_simulated %>% group_by(Dataset) %>% 
@@ -997,11 +1029,18 @@ plot_trust_vs_effect_size(
 
 Fig_A1_Trust_by_real_vs_simulated_sliced <- plot_trust_vs_effect_size(
   data = sim_results_real_vs_simulated,
-  slices = 10
+  slices = 10,
+  assessment_label = "time point"
 ) 
 
 Fig_A1_Trust_by_real_vs_simulated_sliced 
-ggsave("R output/Plots/Figures tiff/Fig_A1_Trust_by_real_vs_simulated_sliced.tiff", 
+ggsave(plots_path("Figures tiff/Fig_A1_Trust_by_real_vs_simulated_sliced.tiff"), 
+       plot = Fig_A1_Trust_by_real_vs_simulated_sliced,
+       width = 11, height = 7)
+ggsave(plots_path("Figures final/Fig_A1_Trust_by_real_vs_simulated_sliced.svg"), 
+       plot = Fig_A1_Trust_by_real_vs_simulated_sliced,
+       width = 11, height = 7)
+ggsave(plots_path("Figures final/Fig_A1_Trust_by_real_vs_simulated_sliced.pdf"), 
        plot = Fig_A1_Trust_by_real_vs_simulated_sliced,
        width = 11, height = 7)
 
@@ -1037,18 +1076,137 @@ qq_n_bees_initial_plot <- ggplot(data.frame(sample = n_bees_initial), aes(sample
 Fig_A2_Normality_n_bees_initial <- hist_n_bees_initial_plot + qq_n_bees_initial_plot + plot_layout(guides = "collect")
 
 Fig_A2_Normality_n_bees_initial
-ggsave("R output/Plots/Figures tiff/Fig_A2_Normality_n_bees_initial.tiff", 
+ggsave(plots_path("Figures tiff/Fig_A2_Normality_n_bees_initial.tiff"), 
+       width = 8, height = 6)
+ggsave(plots_path("Figures final/Fig_A2_Normality_n_bees_initial.svg"), 
        width = 8, height = 6)
 
-## Fig. A3 - DHARMa plot of simple model --------------
-model_1 <- glmmTMB(n_bees ~ Assessment + (1|Site/Colony), data = original_control_data_234, family = "nbinom2")
+## Fig. A3 - DHARMa plot --------------
+model <- var_comps_glmm_main$model
 
-tiff("R output/Plots/Figures tiff/Fig_A3_DHARMa_model_residuals.tiff", width = 8, height = 7, units = "in", res = 300)
-plot(simulateResiduals(fittedModel = model_1))
+svg(plots_path("Figures final/Fig_A3_DHARMa_model_residuals.svg"), width = 8, height = 7)
+plot(simulateResiduals(fittedModel = model))
 dev.off()
 
-## Fig. A4 - Simularity between simulated and original data 
-# done in Script Check similarity between simulated and original data 
+## Fig. A4 - Simularity between simulated and original data --------------
+
+# Simulate one dataset matching the original sample size
+set.seed(100)
+simulated_data_few_loc_2_GLMM <- mimic_control_data(original_data = original_control_data_234,
+                                                    n_sites_total = 6,
+                                                    n_colonies = 8,
+                                                    use_n_bees_initial = "main",
+                                                    use_glmm = TRUE)
+
+# Fit the simple NB model to original and simulated data
+GLMM_simple_NB <- glmmTMB(n_bees ~ Assessment + (1|Site/Colony),
+                          family = "nbinom2",
+                          data = original_control_data_234)
+
+GLMM_simple_NB_sim <- glmmTMB(n_bees ~ Assessment + (1|Site/Colony),
+                              family = "nbinom2",
+                              data = simulated_data_few_loc_2_GLMM)
+
+# EMMs for both models
+emm_GLMM_simple_NB <- ggemmeans(GLMM_simple_NB, terms = "Assessment")
+emm_GLMM_simple_NB_sim <- ggemmeans(GLMM_simple_NB_sim, terms = "Assessment")
+
+emm_data_GLMM_simple_NB <- rbind(
+  data.frame(emm_GLMM_simple_NB, Model = "GLMM_simple_NB (original)"),
+  data.frame(emm_GLMM_simple_NB_sim, Model = "GLMM_simple_NB (simulated)")
+) %>%
+  mutate(Dataset = ifelse(grepl("original", Model), "Original data", "Simulated data"))
+
+# Panel A: EMMs with observations
+emms_w_obs_plot <- ggplot() +
+  geom_point(data = emm_data_GLMM_simple_NB,
+             aes(x = x, y = predicted, color = Dataset, group = Dataset),
+             size = 3, shape = 15, alpha = 0.7) +
+  geom_line(data = emm_data_GLMM_simple_NB,
+            aes(x = x, y = predicted, color = Dataset, group = Dataset)) +
+  geom_jitter(data = original_control_data_234,
+              aes(x = Assessment, y = n_bees),
+              shape = 16, color = colors_real_vs_simulated[1], alpha = 0.3, size = 2) +
+  geom_jitter(data = simulated_data_few_loc_2_GLMM,
+              aes(x = Assessment, y = n_bees),
+              shape = 16, color = colors_real_vs_simulated[2], alpha = 0.3, size = 2) +
+  labs(x = "Timepoint", y = "Number of bees", color = "Dataset") +
+  scale_color_manual(values = colors_real_vs_simulated) +
+  scale_y_continuous(limits = c(0, 45000)) +
+  theme_test(base_size = 13) +
+  theme(legend.title = element_blank())
+
+# Panel B: mean +/- SD of original vs simulated data across simulations
+if (read_results) {
+  properties_simulated_data <- readRDS(results_path("properties_simulated_data_sample_size_as_original.rds"))
+} else {
+  properties_simulated_data <- map_dfr(1:n_simulations, function(i) {
+    simulated_data_few_loc_2_GLMM <- mimic_control_data(
+      original_data = original_control_data_234,
+      n_sites_total = 6,
+      n_colonies = 8,
+      use_n_bees_initial = "main",
+      use_glmm = TRUE
+    )
+
+    simulated_data_few_loc_2_GLMM %>%
+      group_by(Assessment) %>%
+      summarise(
+        n_bees_mean = mean(n_bees),
+        n_bees_sd  = sd(n_bees),
+        .groups = "drop"
+      )
+  })
+}
+
+mean_properties_original_data <- original_control_data %>%
+  group_by(Assessment) %>%
+  summarise(
+    n_bees_mean = mean(n_bees),
+    n_bees_sd = sd(n_bees),
+    .groups = "drop"
+  ) %>%
+  mutate(Dataset = "Original data")
+
+mean_properties_simulated_data <- properties_simulated_data %>%
+  group_by(Assessment) %>%
+  summarise(
+    n_bees_mean = mean(n_bees_mean),
+    n_bees_sd  = mean(n_bees_sd),
+    .groups = "drop"
+  ) %>%
+  mutate(Dataset = "Simulated data")
+
+mean_properties_combined_data <- bind_rows(
+  mean_properties_original_data, mean_properties_simulated_data) %>%
+  filter(Assessment %in% c(2, 3, 4))
+
+properties_plot <- ggplot(mean_properties_combined_data,
+                          aes(x = factor(Assessment),
+                              y = n_bees_mean,
+                              color = Dataset,
+                              group = Dataset)) +
+  geom_errorbar(aes(ymin = n_bees_mean - n_bees_sd,
+                    ymax = n_bees_mean + n_bees_sd),
+                width = 0.15,
+                position = position_dodge(width = 0.1)) +
+  geom_point(size = 3, shape = 15, alpha = 0.7,
+             position = position_dodge(width = 0.1)) +
+  geom_line(position = position_dodge(width = 0.1)) +
+  labs(x = "Timepoint", y = "Mean number of bees (± SD)", color = "Dataset") +
+  scale_y_continuous(limits = c(0, 45000)) +
+  scale_color_manual(values = colors_real_vs_simulated) +
+  theme_test(base_size = 13)
+
+Fig_A4_original_vs_simulated_data <- plot_grid(emms_w_obs_plot, properties_plot, nrow = 2,
+                                               align = "hv", labels = c("A", "B"))
+
+Fig_A4_original_vs_simulated_data
+
+ggsave(plots_path("Figures tiff/Fig_A4_original_vs_simulated_data.tiff"),
+       width = 7, height = 8.5)
+ggsave(plots_path("Figures final/Fig_A4_original_vs_simulated_data.svg"),
+       width = 7, height = 8.5)
 
 ## Fig. A5 - Trust vs effect size -------------
 effect_size_data_final$Assessment <- "Final timepoint"
@@ -1067,7 +1225,9 @@ Fig_A5_trust_vs_sites_by_effect_size <- plot_trust_vs_sites_by_effect_size(
 
 Fig_A5_trust_vs_sites_by_effect_size
 
-ggsave("R output/Plots/Figures tiff/Fig_A5_trust_vs_sites_by_effect_size.tiff", 
+ggsave(plots_path("Figures tiff/Fig_A5_trust_vs_sites_by_effect_size.tiff"), 
+       width = 8.5, height = 6)
+ggsave(plots_path("Figures final/Fig_A5_trust_vs_sites_by_effect_size.svg"), 
        width = 8.5, height = 6)
 
 ## Fig. A6 - Pareto figure ----------------
@@ -1076,7 +1236,7 @@ pareto_plot_across <- generate_pareto_plot(trust_rates_pareto_alphas,
 
 if(read_results){
   sim_results_pareto_alphas_small_sample_size <- 
-    readRDS("R output/Simulation results/sim_results_2026_pareto_alphas_small_sample_size.rds")
+    readRDS(results_path("sim_results_2026_pareto_alphas_small_sample_size.rds"))
 }
 
 trust_rates_pareto_alphas_small_sample_size <- 
@@ -1112,7 +1272,9 @@ Fig_A6_pareto <- plot_grid(pareto_plot_final_w_title, pareto_plot_across_w_title
 
 Fig_A6_pareto
 
-ggsave("R output/Plots/Figures tiff/Fig_A6_pareto.tiff", 
+ggsave(plots_path("Figures tiff/Fig_A6_pareto.tiff"), 
+       width = 10.5, height = 10.5)
+ggsave(plots_path("Figures final/Fig_A6_pareto.svg"), 
        width = 10.5, height = 10.5)
 
 ## Fig. A7 - Power vs sites EFSA equivalence ----------------
@@ -1167,7 +1329,9 @@ Fig_A7_power_vs_sites_equi_0_5_perc <- plot_grid(
 
 Fig_A7_power_vs_sites_equi_0_5_perc
 
-ggsave("R output/Plots/Figures tiff/Fig_A7_power_vs_sites_equi_0_5_perc.tiff", 
+ggsave(plots_path("Figures tiff/Fig_A7_power_vs_sites_equi_0_5_perc.tiff"), 
+       width = 10, height = 8)
+ggsave(plots_path("Figures final/Fig_A7_power_vs_sites_equi_0_5_perc.svg"), 
        width = 10, height = 8)
 
 ## Fig. A8 - Power vs sites difference equivalence ----------------
@@ -1226,7 +1390,7 @@ Fig_A8_power_vs_sites_diff_7_perc <- plot_grid(diff_7_perc_plot_wo_legend,
 
 Fig_A8_power_vs_sites_diff_7_perc
 
-ggsave("R output/Plots/Figures tiff/Fig_A8_power_vs_sites_diff_7_perc.tiff", 
+ggsave(plots_path("Figures tiff/Fig_A8_power_vs_sites_diff_7_perc.tiff"), 
        width = 8, height = 8)
 
 # Graphics abstract --------------
@@ -1234,8 +1398,8 @@ ggsave("R output/Plots/Figures tiff/Fig_A8_power_vs_sites_diff_7_perc.tiff",
 data_scenarios_graphics <- tribble(
   ~Pesticide, ~effect_size, ~ci60_halfwidth,
   # effect_size, ci60_halfwidth chosen to generate desired test outcomes
-  "A",         -0.07,        0.02,   
-  "B",         -0.16,        0.09
+  "B",         -0.07,        0.02,   
+  "A",         -0.16,        0.09
 ) %>%
   mutate(
     lower_60 = round(effect_size - ci60_halfwidth, 2),
@@ -1278,6 +1442,8 @@ ggplot(data_scenarios_graphics,
   geom_text(aes(x = Pesticide, y = 45, label = Equivalence), 
             hjust = 0.5, size = txt9, lineheight = 1)
 
-ggsave("R output/Plots/Figures tiff/Graphics_abstract_left.tiff", 
+ggsave(plots_path("Figures tiff/Graphics_abstract_left.tiff"), 
+       width = 8, height = 3.5, units = "cm")
+ggsave(plots_path("Figures final/Graphics_abstract_left.svg"), 
        width = 8, height = 3.5, units = "cm")
 
