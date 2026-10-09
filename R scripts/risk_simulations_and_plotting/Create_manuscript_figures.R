@@ -127,7 +127,7 @@ plot_trust_vs_sites_by_effect_size <- function(data,
     ) +
     theme(
       legend.position = if (show_legend) "right" else "none",
-      panel.grid.major = element_line(color = "lightgrey", linewidth = 0.05, linetype = 3),
+      panel.grid.major = element_blank(),
       strip.text.y = element_text(angle = 0, hjust = 0.5),
       strip.background = element_rect(fill = "white"),
       axis.text = element_text(size = base_size),
@@ -295,7 +295,7 @@ plot_power_vs_sites <- function(data, hline_data, x_breaks, colors, linetypes, b
     scale_linetype_manual(values = linetypes) +
     theme_test() +
     theme(
-      panel.grid.major.y = element_line(color = "lightgrey", linewidth = 0.05, linetype = 3),
+      panel.grid.major.y = element_blank(),
       panel.grid.major.x = element_blank(),
       strip.text = element_text(angle = 0, hjust = 0.5, size = 13),
       strip.background = element_rect(fill = "white"),
@@ -681,7 +681,7 @@ plot_trust_vs_effect_size <- function(data,
       x = "True effect size"
     ) +
     theme(
-      panel.grid.major = element_line(color = "lightgrey", linewidth = 0.05, linetype = 3),
+      panel.grid.major = element_blank(),
       strip.text.x = element_text(size = 14),
       strip.text.y = element_text(size = 14, angle = 0, hjust = 0.5),
       strip.background = element_rect(fill = "white"),
@@ -1054,7 +1054,8 @@ shapiro_label <- sprintf("Shapiro-Wilk\nW = %.3f\np = %.3f",
 
 # Shared theme for alignment
 base_theme <- theme_minimal(base_size = 12) +
-  theme(plot.margin = margin(10, 10, 10, 10))
+  theme(plot.margin = margin(10, 10, 10, 10),
+        panel.grid = element_blank())
 
 # Histogram
 hist_n_bees_initial_plot <- ggplot(data.frame(x = n_bees_initial), aes(x)) +
