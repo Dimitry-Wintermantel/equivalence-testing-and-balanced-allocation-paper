@@ -8,13 +8,13 @@ This repository contains the scripts used for the analyses in:
 
 | Path | Description |
 |---|---|
-| `R scripts/anticlustering_randomisation/experimental_allocation.R` | Balanced allocation of test subjects (anti-clustering randomisation) |
+| `R scripts/anticlustering_randomisation/experimental_allocation.R` | Balanced allocation of test subjects (anticlustering randomisation) |
 | `R scripts/risk_simulations_and_plotting/Read original data.R` | Loads the raw data |
 | `R scripts/risk_simulations_and_plotting/Functions to simulate risk assessments.R` | Functions used by simulate risk.R and Create_manuscript_figures.R scripts |
 | `R scripts/risk_simulations_and_plotting/Simulate risk.R` | Runs the simulation scenarios and saves the results |
 | `R scripts/risk_simulations_and_plotting/Create_manuscript_figures.R` | Builds all figures from the results |
 | `R scripts/risk_simulations_and_plotting/config.R` | Central configuration: paths, `read_results`, `recompute_missing`, `n_simulations`, `seed_number` |
-| `R scripts/risk_simulations_and_plotting/run_all.R` | Convenience entry point; runs the two scripts below in order |
+| `R scripts/risk_simulations_and_plotting/run_all.R` | Convenience entry point; runs the scripts for reading / simulating data and plotting them in order |
 
 ## Data
 
