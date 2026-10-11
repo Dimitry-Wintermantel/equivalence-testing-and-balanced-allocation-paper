@@ -42,7 +42,7 @@ library(anticlust)
 #' @section How to cite:
 #' If you use this function in academic work, please cite:
 #' Wintermantel, D., Osterman, J., Mair, M. M., & Hartig, F. (2026).
-#' *Equivalence testing in pesticide risk assessment – Evaluation and practical
+#' *Equivalence testing in pesticide risk assessment – Evaluation and practical guidance for design, analysis and interpretation*.
 #' https://doi.org/10.48550/arXiv.2607.07543
 #'
 #' The treatment allocation implemented here relies on anticlustering algorithms.
