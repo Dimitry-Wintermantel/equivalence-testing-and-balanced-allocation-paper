@@ -1,0 +1,110 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper it accompanies."
+title: "Code for: Equivalence testing in pesticide risk assessment: Evaluation and practical guidance for design, analysis and interpretation"
+type: software
+authors:
+  - family-names: Wintermantel
+    given-names: Dimitry
+    orcid: "https://orcid.org/0000-0001-6309-6319"
+    affiliation: "Chair of Nature Conservation and Landscape Ecology, University of Freiburg, Stefan-Meier-Str. 76, 79104 Freiburg, Germany"
+  - family-names: Osterman
+    given-names: Julia
+    orcid: "https://orcid.org/0000-0002-9142-3580"
+    affiliation: "Department of Biological & Environmental Sciences, University of Gothenburg, Box 463, 40530 Gothenburg, Sweden; Centre for Future Chemical Risk Assessment and Management (FRAM), University of Gothenburg, Box 463, 40530 Gothenburg, Sweden; Gothenburg Global Biodiversity Centre, Box 463, 40530 Gothenburg, Sweden"
+  - family-names: Mair
+    given-names: Magdalena M.
+    orcid: "https://orcid.org/0000-0003-0074-6067"
+    affiliation: "Statistical Ecotoxicology, Bayreuth Center of Ecology and Environmental Research (BayCEER), University of Bayreuth, Universitätsstr. 30, 95447 Bayreuth, Germany"
+  - family-names: Hartig
+    given-names: Florian
+    orcid: "https://orcid.org/0000-0002-6255-9059"
+    affiliation: "Theoretical Ecology, Faculty of Biology and Preclinical Medicine, University of Regensburg, Universitätsstr. 31, 93053 Regensburg, Germany"
+contact:
+  - family-names: Wintermantel
+    given-names: Dimitry
+    orcid: "https://orcid.org/0000-0001-6309-6319"
+    affiliation: "Chair of Nature Conservation and Landscape Ecology, University of Freiburg, Stefan-Meier-Str. 76, 79104 Freiburg, Germany"
+    email: "dimitry.wintermantel@nature.uni-freiburg.de"
+repository-code: "https://github.com/Dimitry-Wintermantel/equivalence-testing-and-balanced-allocation-paper"
+url: "https://github.com/Dimitry-Wintermantel/equivalence-testing-and-balanced-allocation-paper"
+license: MIT
+version: "Environ_Int-v2"
+keywords:
+  - equivalence testing
+  - non-inferiority test
+  - pesticide risk assessment
+  - environmental risk assessment
+  - plant protection product
+  - honeybees
+  - Apis mellifera
+  - pollinator
+  - experimental design
+  - anticlustering
+  - statistical power
+  - simulation study
+  - EFSA
+  - reproducibility
+abstract: >-
+  R code accompanying Wintermantel et al., "Equivalence testing in pesticide risk
+  assessment: Evaluation and practical guidance for design, analysis and
+  interpretation". The repository contains the simulation scenarios, the
+  equivalence-testing functions, the anticlustering-based balanced allocation
+  function, and the scripts that generate the figures in the paper.
+preferred-citation:
+  type: article
+  title: "Equivalence testing in pesticide risk assessment: Evaluation and practical guidance for design, analysis and interpretation"
+  authors:
+    - family-names: Wintermantel
+      given-names: Dimitry
+      orcid: "https://orcid.org/0000-0001-6309-6319"
+      affiliation: "Chair of Nature Conservation and Landscape Ecology, University of Freiburg, Stefan-Meier-Str. 76, 79104 Freiburg, Germany"
+    - family-names: Osterman
+      given-names: Julia
+      orcid: "https://orcid.org/0000-0002-9142-3580"
+      affiliation: "Department of Biological & Environmental Sciences, University of Gothenburg, Box 463, 40530 Gothenburg, Sweden; Centre for Future Chemical Risk Assessment and Management (FRAM), University of Gothenburg, Box 463, 40530 Gothenburg, Sweden; Gothenburg Global Biodiversity Centre, Box 463, 40530 Gothenburg, Sweden"
+    - family-names: Mair
+      given-names: Magdalena M.
+      orcid: "https://orcid.org/0000-0003-0074-6067"
+      affiliation: "Statistical Ecotoxicology, Bayreuth Center of Ecology and Environmental Research (BayCEER), University of Bayreuth, Universitätsstr. 30, 95447 Bayreuth, Germany"
+    - family-names: Hartig
+      given-names: Florian
+      orcid: "https://orcid.org/0000-0002-6255-9059"
+      affiliation: "Theoretical Ecology, Faculty of Biology and Preclinical Medicine, University of Regensburg, Universitätsstr. 31, 93053 Regensburg, Germany"
+  journal: "Environment International"
+  publisher:
+    name: "Elsevier"
+  issn: "0160-4120"
+  year: 2026
+  keywords:
+    - environmental risk assessment
+    - plant protection product
+    - experimental design
+    - non-inferiority test
+    - point-null test
+    - Apis mellifera
+    - pollinator
+  abstract: >-
+    Harmful pesticide effects exceeding specific protection goals (SPG) may go
+    undetected in underpowered studies. Regulatory honeybee field studies have
+    consistently failed to reach the statistical power required under European
+    Food Safety Authority (EFSA) guidance, which may have contributed to the
+    approval of high-risk substances. Therefore, EFSA advised a shift from testing
+    the null hypothesis of 'no effect' (difference testing) to equivalence testing.
+    Under this new approach, a pesticide is classified as 'low risk' if the null
+    hypothesis that its effect exceeds the SPG can be rejected. For honeybees, the
+    recommended SPG is a colony size reduction below 10%. Critics have argued that
+    this framework requires excessive experimental effort to demonstrate pesticide
+    safety and proposed an alternative equivalence test defining treatment effects
+    relative to the lower bound of the 90%-control-group confidence interval. Using
+    simulations mimicking a regulatory honeybee field study, we show that although
+    the two equivalence tests share the same trade-off between false 'low-risk' and
+    false 'high-risk' classifications, only EFSA's equivalence test reliably
+    identifies pesticides with effects >SPG at alpha = 0.2. Our results show that
+    increasing sample sizes beyond current practice is often necessary for reliable
+    regulatory assessment. However, for pesticides with effect sizes <=5%, sample
+    size requirements remain lower than those implied by the power requirement of
+    EFSA's former difference-test-based guidance. Moreover, covariate adjustment -
+    through a model term or balanced colony allocation using anticlustering
+    randomisation - can reduce sample size requirements without losing power and
+    thus save costs. Finally, we provide practical guidance for anticlustering
+    randomisation, equivalence testing and their implementation in R.
